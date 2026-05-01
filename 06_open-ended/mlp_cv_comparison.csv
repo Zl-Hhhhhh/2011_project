@@ -1,0 +1,4 @@
+,Dropout,Enrolled,Graduate,Macro Avg,Accuracy
+Original,0.6406,0.2819,0.758,0.5602,0.6606
+SMOTE,0.6822,0.7255,0.724,0.7105,0.7119
+ADASYN,0.6702,0.6718,0.7346,0.6922,0.6943
