@@ -2,6 +2,8 @@
 This repository contains the group project for **DSAA2011 (L01)** at HKUST(GZ).  
 We apply machine learning techniques to the **Student Dropout Dataset** to explore, cluster, and predict student academic outcomes.
 
+**To reproduce all our results, please run `project.ipynb`**
+
 ## Dataset
 
 **Student Dropout Dataset** – 4,424 instances of students enrolled in different undergraduate degrees.  
