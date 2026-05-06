@@ -9,58 +9,67 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import learning_curve
 
-def evaluate_model(model, X_train, y_train, X_test, y_test, model_name="Model"):
+def evaluate_model(model, X_train, y_train, X_test, y_test, model_name="Model", class_names=None):
     """
     对训练好的模型做出完整评估：
     - 在训练集、测试集、全量数据上计算指标
     - 输出分类报告
     - 绘制混淆矩阵
     - 绘制多分类ROC曲线（OvR）并计算平均AUC
+
+    class_names: optional, used for classification_report target_names
+                 and confusion matrix labels
     """
     # 预测
     y_train_pred = model.predict(X_train)
     y_test_pred = model.predict(X_test)
-    
+
     # 合并全量集
     X_all = np.vstack([X_train, X_test])
     y_all = np.hstack([y_train, y_test])
     y_all_pred = model.predict(X_all)
-    
-    metrics = {}
-    for name, y_true, y_pred in [("Train", y_train, y_train_pred),
-                                  ("Test", y_test, y_test_pred),
-                                  ("All", y_all, y_all_pred)]:
-        metrics[name] = {
+
+    rows = []
+    for subset, y_true, y_pred in [("Train", y_train, y_train_pred),
+                                    ("Test", y_test, y_test_pred),
+                                    ("All", y_all, y_all_pred)]:
+        row = {
+            "Subset": subset,
             "Accuracy": accuracy_score(y_true, y_pred),
-            "Precision (macro)": precision_score(y_true, y_pred, average='macro'),
-            "Recall (macro)": recall_score(y_true, y_pred, average='macro'),
-            "F1 (macro)": f1_score(y_true, y_pred, average='macro'),
+            "Precision": precision_score(y_true, y_pred, average='macro'),
+            "Recall": recall_score(y_true, y_pred, average='macro'),
+            "F1": f1_score(y_true, y_pred, average='macro'),
         }
-    
-    metrics_df = pd.DataFrame(metrics).round(4)
-    print(f"\n{model_name} Evaluation:\n", metrics_df)
-    
+        rows.append(row)
+
+    metrics_df = pd.DataFrame(rows).set_index("Subset")
+    print(f"\n{model_name} Evaluation:\n", metrics_df.round(4))
+
     # 分类报告（以测试集为例）
     print("\nClassification Report (Test):")
-    print(classification_report(y_test, y_test_pred))
-    
+    if class_names is not None:
+        print(classification_report(y_test, y_test_pred, target_names=class_names))
+    else:
+        print(classification_report(y_test, y_test_pred))
+
     # 混淆矩阵 - 测试集
-    plot_confusion_matrix(y_test, y_test_pred, labels=np.unique(y_all),
+    plot_confusion_matrix(y_test, y_test_pred,
+                          display_labels=class_names,
                           title=f"{model_name} - Confusion Matrix (Test)")
-    
+
     # ROC曲线 - 测试集（需预测概率）
     if hasattr(model, "predict_proba"):
         plot_roc_curves(model, X_test, y_test, model_name)
-    
+
     return metrics_df
 
-def plot_confusion_matrix(y_true, y_pred, labels, title="Confusion Matrix"):
-    cm = confusion_matrix(y_true, y_pred, labels=labels)
-    plt.figure(figsize=(6,5))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=labels, yticklabels=labels)
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
+def plot_confusion_matrix(y_true, y_pred, display_labels=None, title="Confusion Matrix"):
+    """Plot confusion matrix. display_labels are string names for axes (optional)."""
+    from sklearn.metrics import ConfusionMatrixDisplay
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(6, 5))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=display_labels)
+    disp.plot(cmap="Blues", values_format="d", ax=plt.gca(), colorbar=True)
     plt.title(title)
     plt.tight_layout()
     plt.show()
